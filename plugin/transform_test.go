@@ -6,15 +6,15 @@
 package plugin
 
 import (
+	"testing"
 	"time"
 
-	"github.com/oscal-compass/compliance-to-policy-go/v2/api/proto"
-	"github.com/oscal-compass/compliance-to-policy-go/v2/policy"
 	"github.com/oscal-compass/oscal-sdk-go/extensions"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"testing"
+	"github.com/oscal-compass/compliance-to-policy-go/v2/api/proto"
+	"github.com/oscal-compass/compliance-to-policy-go/v2/policy"
 )
 
 var testTimeString, _ = time.Parse("00:00:00", "12:00:00")
