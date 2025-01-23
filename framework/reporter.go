@@ -57,6 +57,41 @@ func WithTitle(title string) GenerateOption {
 	}
 }
 
+// generate OSCAL Findings for all non-passing controls in the OSCAL Observation
+func (r *Reporter) generateFindings(observation oscalTypes.Observation, ruleSet extensions.RuleSet, implementationSettings settings.ImplementationSettings) ([]oscalTypes.Finding, error) {
+
+	findings := make([]oscalTypes.Finding, 0)
+
+	applicableControls, err := implementationSettings.ApplicableControls(ruleSet.Rule.ID)
+	if err != nil {
+		return findings, err
+	}
+
+	for _, controlId := range applicableControls {
+
+		targetId := fmt.Sprintf("%s_smt", controlId)
+		finding := oscalTypes.Finding{
+			UUID: uuid.NewUUID(),
+			RelatedObservations: &[]oscalTypes.RelatedObservation{
+				{
+					ObservationUuid: observation.UUID,
+				},
+			},
+			Target: oscalTypes.FindingTarget{
+				TargetId: targetId,
+				Type:     "statement-id",
+				Status: oscalTypes.ObjectiveStatus{
+					State: "not-satisfied",
+				},
+			},
+		}
+		findings = append(findings, finding)
+	}
+
+	return findings, nil
+}
+
+// find all controls form the implementation settings
 func (r *Reporter) findControls(implementationSettings settings.ImplementationSettings) oscalTypes.ReviewedControls {
 
 	includeControls := []oscalTypes.AssessedControlsSelectControlById{}
@@ -81,6 +116,7 @@ func (r *Reporter) findControls(implementationSettings settings.ImplementationSe
 
 }
 
+// Convert a PVP ObservationByCheck to an OSCAL Observation
 func (r *Reporter) toOscalObservation(observationByCheck policy.ObservationByCheck, ruleSet extensions.RuleSet) (oscalTypes.Observation, error) {
 
 	oscalObservation := oscalTypes.Observation{
@@ -176,6 +212,8 @@ func (r *Reporter) GenerateAssessmentResults(ctx context.Context, planHref strin
 
 	// for each PVPResult.Observation create an OSCAL Observation
 	oscalObservations := make([]oscalTypes.Observation, 0)
+	oscalFindings := make([]oscalTypes.Finding, 0)
+
 	for _, result := range results {
 
 		for _, observationByCheck := range result.ObservationsByCheck {
@@ -190,10 +228,25 @@ func (r *Reporter) GenerateAssessmentResults(ctx context.Context, planHref strin
 			if err != nil {
 				return assessmentResults, fmt.Errorf("failed to convert observation for check: %w", err)
 			}
+
+			// if the observation subject is not "pass" then create relevant findings
+			for _, subject := range *obs.Subjects {
+				for _, prop := range *subject.Props {
+					if prop.Name == "result" {
+						if prop.Value != policy.ResultPass.String() {
+							obsFindings, err := r.generateFindings(obs, rule, *implementationSettings)
+							if err != nil {
+								return assessmentResults, fmt.Errorf("failed to create finding for check: %w", err)
+							}
+							oscalFindings = append(oscalFindings, obsFindings...)
+						}
+					}
+				}
+			}
 			oscalObservations = append(oscalObservations, obs)
 		}
-	}
 
+	}
 	reviewedConrols := r.findControls(*implementationSettings)
 
 	oscalResults := []oscalTypes.Result{
@@ -204,6 +257,7 @@ func (r *Reporter) GenerateAssessmentResults(ctx context.Context, planHref strin
 			Start:            time.Now(),
 			ReviewedControls: reviewedConrols,
 			Observations:     &oscalObservations,
+			Findings:         &oscalFindings,
 		},
 	}
 	assessmentResults.Results = oscalResults

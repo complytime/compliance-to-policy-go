@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	oscalTypes "github.com/defenseunicorns/go-oscal/src/types/oscal-1-1-2"
 	"github.com/oscal-compass/compliance-to-policy-go/v2/policy"
@@ -30,7 +31,14 @@ func TestGenereateAssessmentResults(t *testing.T) {
 					Description: "Ensure that the --cert-file argument is set as appropriate",
 					CheckID:     "etcd_cert_file",
 					Methods:     []string{"test_method_1"},
-					Subjects:    []policy.Subject{{Title: "test_subject_1"}},
+					Subjects: []policy.Subject{
+						{
+							Title:       "test_subject_1",
+							Result:      policy.ResultFail,
+							Reason:      "not-satisfied",
+							EvaluatedOn: time.Now(),
+						},
+					},
 				},
 			},
 			Links: []policy.Link{
@@ -54,8 +62,8 @@ func TestGenereateAssessmentResults(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Len(t, ar.Results, 1)
-
 	require.Len(t, *ar.Results[0].Observations, 1)
+	require.Len(t, *ar.Results[0].Findings, 1)
 
 	oscalObs := *ar.Results[0].Observations
 	require.Equal(t, oscalObs[0].Title, pvpResults[0].ObservationsByCheck[0].Title)
