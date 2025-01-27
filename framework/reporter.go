@@ -45,19 +45,17 @@ func (g *generateOpts) defaults() {
 	g.title = models.DefaultRequiredString
 }
 
-// GenerateOption defineoptions to tune the behavior of
-// GenerateAssessmentResults.
+// GenerateOption defines optional arguments to tune the behavior of GenerateAssessmentResults
 type GenerateOption func(opts *generateOpts)
 
-// WithTitle is a GenerateOptions that sets the AssessmentResults title
-// in the metadata.
+// WithTitle is a GenerateOptions that sets the AssessmentResults title in the metadata
 func WithTitle(title string) GenerateOption {
 	return func(opts *generateOpts) {
 		opts.title = title
 	}
 }
 
-// generate OSCAL Findings for all non-passing controls in the OSCAL Observation
+// Generate OSCAL Findings for all non-passing controls in the OSCAL Observation
 func (r *Reporter) generateFindings(observation oscalTypes.Observation, ruleSet extensions.RuleSet, implementationSettings settings.ImplementationSettings) ([]oscalTypes.Finding, error) {
 
 	findings := make([]oscalTypes.Finding, 0)
@@ -91,11 +89,12 @@ func (r *Reporter) generateFindings(observation oscalTypes.Observation, ruleSet 
 	return findings, nil
 }
 
-// find all controls form the implementation settings
+// Find all controls form the implementation settings
 func (r *Reporter) findControls(implementationSettings settings.ImplementationSettings) oscalTypes.ReviewedControls {
 
 	includeControls := []oscalTypes.AssessedControlsSelectControlById{}
 
+	// iterate over all controls to get list of included control IDs
 	for _, controlId := range implementationSettings.AllControls() {
 		selectedControlById := oscalTypes.AssessedControlsSelectControlById{
 			ControlId: controlId,
@@ -117,7 +116,7 @@ func (r *Reporter) findControls(implementationSettings settings.ImplementationSe
 }
 
 // Convert a PVP ObservationByCheck to an OSCAL Observation
-func (r *Reporter) toOscalObservation(observationByCheck policy.ObservationByCheck, ruleSet extensions.RuleSet) (oscalTypes.Observation, error) {
+func (r *Reporter) toOscalObservation(observationByCheck policy.ObservationByCheck, ruleSet extensions.RuleSet) oscalTypes.Observation {
 
 	oscalObservation := oscalTypes.Observation{
 		UUID:        uuid.NewUUID(),
@@ -181,7 +180,7 @@ func (r *Reporter) toOscalObservation(observationByCheck policy.ObservationByChe
 	}
 	oscalObservation.Props = &props
 
-	return oscalObservation, nil
+	return oscalObservation
 }
 
 // Convert PVPResults to OSCAL AsessmentResults
@@ -224,12 +223,9 @@ func (r *Reporter) GenerateAssessmentResults(ctx context.Context, planHref strin
 				}
 			}
 
-			obs, err := r.toOscalObservation(observationByCheck, rule)
-			if err != nil {
-				return assessmentResults, fmt.Errorf("failed to convert observation for check: %w", err)
-			}
+			obs := r.toOscalObservation(observationByCheck, rule)
 
-			// if the observation subject is not "pass" then create relevant findings
+			// if the observation subject result prop is not "pass" then create relevant findings
 			for _, subject := range *obs.Subjects {
 				for _, prop := range *subject.Props {
 					if prop.Name == "result" {

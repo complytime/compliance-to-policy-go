@@ -21,9 +21,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGenereateAssessmentResults(t *testing.T) {
-
-	pvpResults := []*policy.PVPResult{
+var (
+	pvpResults = []*policy.PVPResult{
 		{
 			ObservationsByCheck: []policy.ObservationByCheck{
 				{
@@ -36,7 +35,14 @@ func TestGenereateAssessmentResults(t *testing.T) {
 							Title:       "test_subject_1",
 							Result:      policy.ResultFail,
 							Reason:      "not-satisfied",
+							ResourceID:  "test_resource_1",
 							EvaluatedOn: time.Now(),
+						},
+					},
+					RelevantEvidences: []policy.Link{
+						{
+							Description: "test_related_evidence_1",
+							Href:        "https://test-related-evidence-1",
 						},
 					},
 				},
@@ -49,25 +55,115 @@ func TestGenereateAssessmentResults(t *testing.T) {
 			},
 		},
 	}
+)
+
+func TestReporter_GenereateAssessmentResults(t *testing.T) {
 
 	compDef := readCompDef(t)
-
 	r := Reporter{
 		store: prepMemoryStore(t, compDef),
 	}
 
 	implementationSettings := prepImplementationSettings(t, compDef)
 
-	ar, err := r.GenerateAssessmentResults(context.TODO(), "https://...", &implementationSettings, pvpResults)
-	require.NoError(t, err)
+	testTitle := "test-title"
+	planHref := "https://test-plan-href"
+	opts := WithTitle(testTitle)
 
+	ar, err := r.GenerateAssessmentResults(context.TODO(), planHref, &implementationSettings, pvpResults, opts)
+	require.NoError(t, err)
+	require.Equal(t, ar.Metadata.Title, testTitle)
+	require.Equal(t, ar.ImportAp.Href, planHref)
+
+	// verify lenght of Results attributes
 	require.Len(t, ar.Results, 1)
 	require.Len(t, *ar.Results[0].Observations, 1)
 	require.Len(t, *ar.Results[0].Findings, 1)
+	require.Len(t, ar.Results[0].ReviewedControls.ControlSelections, 1)
 
-	oscalObs := *ar.Results[0].Observations
-	require.Equal(t, oscalObs[0].Title, pvpResults[0].ObservationsByCheck[0].Title)
+}
 
+func TestReporter_FindControls(t *testing.T) {
+	compDef := readCompDef(t)
+	r := Reporter{
+		store: prepMemoryStore(t, compDef),
+	}
+
+	implementationSettings := prepImplementationSettings(t, compDef)
+	foundControls := r.findControls(implementationSettings)
+	includeControls := *foundControls.ControlSelections[0].IncludeControls
+
+	require.Len(t, foundControls.ControlSelections, 1)
+	require.Equal(t, includeControls[0].ControlId, implementationSettings.AllControls()[0])
+}
+
+func TestReporter_ToOscalObservation(t *testing.T) {
+	compDef := readCompDef(t)
+	r := Reporter{
+		store: prepMemoryStore(t, compDef),
+	}
+
+	observationByCheck := pvpResults[0].ObservationsByCheck[0]
+	ruleSet, err := r.store.GetByCheckID(context.TODO(), observationByCheck.CheckID)
+	require.NoError(t, err)
+
+	oscalObs := r.toOscalObservation(observationByCheck, ruleSet)
+	require.Equal(t, oscalObs.Title, pvpResults[0].ObservationsByCheck[0].Title)
+	require.Equal(t, oscalObs.Description, pvpResults[0].ObservationsByCheck[0].Description)
+
+	oscalObsSubjects := *oscalObs.Subjects
+	require.Len(t, oscalObsSubjects, 1)
+	require.Equal(t, oscalObsSubjects[0].Title, pvpResults[0].ObservationsByCheck[0].Subjects[0].Title)
+	require.Equal(t, oscalObsSubjects[0].Type, pvpResults[0].ObservationsByCheck[0].Subjects[0].Type)
+
+	oscalObsRelEv := *oscalObs.RelevantEvidence
+	require.Len(t, oscalObsRelEv, 1)
+	require.Equal(t, oscalObsRelEv[0].Href, pvpResults[0].ObservationsByCheck[0].RelevantEvidences[0].Href)
+	require.Equal(t, oscalObsRelEv[0].Description, pvpResults[0].ObservationsByCheck[0].RelevantEvidences[0].Description)
+
+	oscalObsSubjectProps := *oscalObsSubjects[0].Props
+	require.Len(t, oscalObsSubjectProps, 4)
+
+	// iterate over OSCAL observation subject properties and verify match with PVP result
+	for _, v := range oscalObsSubjectProps {
+		if v.Name == "resource-id" {
+			require.Equal(t, v.Value, pvpResults[0].ObservationsByCheck[0].Subjects[0].ResourceID)
+		} else if v.Name == "result" {
+			require.Equal(t, v.Value, pvpResults[0].ObservationsByCheck[0].Subjects[0].Result.String())
+		} else if v.Name == "evaluated-on" {
+			require.Equal(t, v.Value, pvpResults[0].ObservationsByCheck[0].Subjects[0].EvaluatedOn.String())
+		} else if v.Name == "reason" {
+			require.Equal(t, v.Value, pvpResults[0].ObservationsByCheck[0].Subjects[0].Reason)
+		}
+	}
+
+}
+
+func TestReporter_GenerateFindings(t *testing.T) {
+	compDef := readCompDef(t)
+	r := Reporter{
+		store: prepMemoryStore(t, compDef),
+	}
+
+	implementationSettings := prepImplementationSettings(t, compDef)
+
+	observationByCheck := pvpResults[0].ObservationsByCheck[0]
+	ruleSet, err := r.store.GetByCheckID(context.TODO(), observationByCheck.CheckID)
+	require.NoError(t, err)
+
+	oscalObservation := r.toOscalObservation(observationByCheck, ruleSet)
+	findings, err := r.generateFindings(oscalObservation, ruleSet, implementationSettings)
+	require.NoError(t, err)
+	require.Len(t, findings, 1)
+
+	relObs := *findings[0].RelatedObservations
+	require.Len(t, relObs, 1)
+	require.Equal(t, relObs[0].ObservationUuid, oscalObservation.UUID)
+
+	findingTarget := findings[0].Target
+	require.Equal(t, findingTarget.TargetId, "CIS-2.1_smt")
+	require.Equal(t, findingTarget.Type, "statement-id")
+	require.Equal(t, findingTarget.Status.State, "not-satisfied")
 }
 
 // Load test component definition JSON
