@@ -13,6 +13,7 @@ import (
 	"time"
 
 	oscalTypes "github.com/defenseunicorns/go-oscal/src/types/oscal-1-1-2"
+	"github.com/hashicorp/go-hclog"
 	"github.com/oscal-compass/compliance-to-policy-go/v2/policy"
 	"github.com/oscal-compass/oscal-sdk-go/generators"
 	"github.com/oscal-compass/oscal-sdk-go/models/components"
@@ -55,6 +56,11 @@ var (
 			},
 		},
 	}
+	testLogger = hclog.New(&hclog.LoggerOptions{
+		Name:   "c2p",
+		Output: os.Stdout,
+		Level:  hclog.Info,
+	})
 )
 
 func TestReporter_GenereateAssessmentResults(t *testing.T) {
@@ -62,6 +68,7 @@ func TestReporter_GenereateAssessmentResults(t *testing.T) {
 	compDef := readCompDef(t)
 	r := Reporter{
 		store: prepMemoryStore(t, compDef),
+		log:   testLogger,
 	}
 
 	implementationSettings := prepImplementationSettings(t, compDef)
@@ -87,6 +94,7 @@ func TestReporter_FindControls(t *testing.T) {
 	compDef := readCompDef(t)
 	r := Reporter{
 		store: prepMemoryStore(t, compDef),
+		log:   testLogger,
 	}
 
 	implementationSettings := prepImplementationSettings(t, compDef)
@@ -101,6 +109,7 @@ func TestReporter_ToOscalObservation(t *testing.T) {
 	compDef := readCompDef(t)
 	r := Reporter{
 		store: prepMemoryStore(t, compDef),
+		log:   testLogger,
 	}
 
 	observationByCheck := pvpResults[0].ObservationsByCheck[0]
@@ -143,6 +152,7 @@ func TestReporter_GenerateFindings(t *testing.T) {
 	compDef := readCompDef(t)
 	r := Reporter{
 		store: prepMemoryStore(t, compDef),
+		log:   testLogger,
 	}
 
 	implementationSettings := prepImplementationSettings(t, compDef)
