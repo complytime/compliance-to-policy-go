@@ -33,6 +33,7 @@ type Reporter struct {
 
 func NewReporter(log hclog.Logger, store rules.Store) *Reporter {
 	return &Reporter{
+		log:   log,
 		store: store,
 	}
 }
@@ -192,6 +193,8 @@ func (r *Reporter) GenerateAssessmentResults(ctx context.Context, planHref strin
 		opt(&options)
 	}
 
+	r.log.Info(fmt.Sprintf("Generating assessments results for plan %s", planHref))
+
 	importAp := oscalTypes.ImportAp{
 		Href: planHref,
 	}
@@ -235,6 +238,8 @@ func (r *Reporter) GenerateAssessmentResults(ctx context.Context, planHref strin
 								return assessmentResults, fmt.Errorf("failed to create finding for check: %w", err)
 							}
 							oscalFindings = append(oscalFindings, obsFindings...)
+							r.log.Info(fmt.Sprintf("Generated finding for rule %s", rule.Rule.ID))
+
 						}
 					}
 				}
