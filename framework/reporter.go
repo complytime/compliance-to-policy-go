@@ -14,17 +14,13 @@ import (
 	"github.com/defenseunicorns/go-oscal/src/pkg/uuid"
 	oscalTypes "github.com/defenseunicorns/go-oscal/src/types/oscal-1-1-2"
 	"github.com/hashicorp/go-hclog"
-	"github.com/oscal-compass/compliance-to-policy-go/v2/framework/config"
-	"github.com/oscal-compass/compliance-to-policy-go/v2/policy"
 	"github.com/oscal-compass/oscal-sdk-go/extensions"
-	"github.com/oscal-compass/oscal-sdk-go/models"
+	"github.com/oscal-compass/oscal-sdk-go/generators"
 	"github.com/oscal-compass/oscal-sdk-go/rules"
 	"github.com/oscal-compass/oscal-sdk-go/settings"
-)
 
-const (
-	defaultVersion = "0.1.0"
-	defaultTitle   = "Automated Assessment Results"
+	"github.com/oscal-compass/compliance-to-policy-go/v2/framework/config"
+	"github.com/oscal-compass/compliance-to-policy-go/v2/policy"
 )
 
 type Reporter struct {
@@ -53,7 +49,7 @@ type generateOpts struct {
 }
 
 func (g *generateOpts) defaults() {
-	g.title = models.DefaultRequiredString
+	g.title = generators.SampleRequiredString
 }
 
 // GenerateOption defines optional arguments to tune the behavior of GenerateAssessmentResults
@@ -76,9 +72,9 @@ func (r *Reporter) generateFindings(observation oscalTypes.Observation, ruleSet 
 		return findings, err
 	}
 
-	for _, controlId := range applicableControls {
+	for _, control := range applicableControls {
 
-		targetId := fmt.Sprintf("%s_smt", controlId)
+		targetId := fmt.Sprintf("%s_smt", control.ControlId)
 		finding := oscalTypes.Finding{
 			UUID: uuid.NewUUID(),
 			RelatedObservations: &[]oscalTypes.RelatedObservation{
@@ -102,17 +98,7 @@ func (r *Reporter) generateFindings(observation oscalTypes.Observation, ruleSet 
 
 // Find all controls form the implementation settings
 func (r *Reporter) findControls(implementationSettings settings.ImplementationSettings) oscalTypes.ReviewedControls {
-
-	includeControls := []oscalTypes.AssessedControlsSelectControlById{}
-
-	// iterate over all controls to get list of included control IDs
-	for _, controlId := range implementationSettings.AllControls() {
-		selectedControlById := oscalTypes.AssessedControlsSelectControlById{
-			ControlId: controlId,
-		}
-		includeControls = append(includeControls, selectedControlById)
-	}
-
+	includeControls := implementationSettings.AllControls()
 	assessedControls := []oscalTypes.AssessedControls{
 		{
 			IncludeControls: &includeControls,
@@ -209,12 +195,8 @@ func (r *Reporter) GenerateAssessmentResults(ctx context.Context, planHref strin
 		Href: planHref,
 	}
 
-	metadata := oscalTypes.Metadata{
-		Title:        options.title,
-		LastModified: time.Now(),
-		Version:      defaultVersion,
-		OscalVersion: models.OSCALVersion,
-	}
+	metadata := generators.NewSampleMetadata()
+	metadata.Title = options.title
 
 	assessmentResults := oscalTypes.AssessmentResults{
 		UUID:     uuid.NewUUID(),
