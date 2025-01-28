@@ -195,7 +195,7 @@ func (r *Reporter) toOscalObservation(observationByCheck policy.ObservationByChe
 }
 
 // Convert PVPResults to OSCAL AsessmentResults
-func (r *Reporter) GenerateAssessmentResults(ctx context.Context, planHref string, implementationSettings *settings.ImplementationSettings, results []*policy.PVPResult, opts ...GenerateOption) (oscalTypes.AssessmentResults, error) {
+func (r *Reporter) GenerateAssessmentResults(ctx context.Context, planHref string, implementationSettings *settings.ImplementationSettings, results []policy.PVPResult, opts ...GenerateOption) (oscalTypes.AssessmentResults, error) {
 
 	options := generateOpts{}
 	options.defaults()

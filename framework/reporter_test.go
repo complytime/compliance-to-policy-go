@@ -21,7 +21,7 @@ import (
 )
 
 var (
-	pvpResults = []*policy.PVPResult{
+	pvpResults = []policy.PVPResult{
 		{
 			ObservationsByCheck: []policy.ObservationByCheck{
 				{
