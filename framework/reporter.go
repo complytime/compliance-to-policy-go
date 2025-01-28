@@ -14,6 +14,7 @@ import (
 	"github.com/defenseunicorns/go-oscal/src/pkg/uuid"
 	oscalTypes "github.com/defenseunicorns/go-oscal/src/types/oscal-1-1-2"
 	"github.com/hashicorp/go-hclog"
+	"github.com/oscal-compass/compliance-to-policy-go/v2/framework/config"
 	"github.com/oscal-compass/compliance-to-policy-go/v2/policy"
 	"github.com/oscal-compass/oscal-sdk-go/extensions"
 	"github.com/oscal-compass/oscal-sdk-go/models"
@@ -27,15 +28,24 @@ const (
 )
 
 type Reporter struct {
-	log   hclog.Logger
-	store rules.Store
+	log        hclog.Logger
+	rulesStore rules.Store
 }
 
-func NewReporter(log hclog.Logger, store rules.Store) *Reporter {
-	return &Reporter{
-		log:   log,
-		store: store,
+func NewReporter(cfg *config.C2PConfig) (*Reporter, error) {
+	if err := cfg.Validate(); err != nil {
+		return nil, err
 	}
+
+	rulesStore, _, err := config.ResolveOptions(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Reporter{
+		log:        cfg.Logger,
+		rulesStore: rulesStore,
+	}, nil
 }
 
 type generateOpts struct {
@@ -219,7 +229,7 @@ func (r *Reporter) GenerateAssessmentResults(ctx context.Context, planHref strin
 	for _, result := range results {
 
 		for _, observationByCheck := range result.ObservationsByCheck {
-			rule, err := r.store.GetByCheckID(ctx, observationByCheck.CheckID)
+			rule, err := r.rulesStore.GetByCheckID(ctx, observationByCheck.CheckID)
 			if err != nil {
 				if !errors.Is(err, rules.ErrRuleNotFound) {
 					return assessmentResults, fmt.Errorf("failed to convert observation for check: %w", err)

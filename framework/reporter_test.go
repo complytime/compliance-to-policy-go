@@ -13,11 +13,9 @@ import (
 	"time"
 
 	oscalTypes "github.com/defenseunicorns/go-oscal/src/types/oscal-1-1-2"
-	"github.com/hashicorp/go-hclog"
+	"github.com/oscal-compass/compliance-to-policy-go/v2/framework/config"
 	"github.com/oscal-compass/compliance-to-policy-go/v2/policy"
 	"github.com/oscal-compass/oscal-sdk-go/generators"
-	"github.com/oscal-compass/oscal-sdk-go/models/components"
-	"github.com/oscal-compass/oscal-sdk-go/rules"
 	"github.com/oscal-compass/oscal-sdk-go/settings"
 	"github.com/stretchr/testify/require"
 )
@@ -56,21 +54,16 @@ var (
 			},
 		},
 	}
-	testLogger = hclog.New(&hclog.LoggerOptions{
-		Name:   "c2p",
-		Output: os.Stdout,
-		Level:  hclog.Info,
-	})
+	testDataPath = filepath.Join("../test/testdata", "component-definition-test.json")
 )
 
 func TestReporter_GenereateAssessmentResults(t *testing.T) {
 
-	compDef := readCompDef(t)
-	r := Reporter{
-		store: prepMemoryStore(t, compDef),
-		log:   testLogger,
-	}
+	cfg := prepConfig(t)
+	r, err := NewReporter(cfg)
+	require.NoError(t, err)
 
+	compDef := readCompDef(t)
 	implementationSettings := prepImplementationSettings(t, compDef)
 
 	testTitle := "test-title"
@@ -91,12 +84,11 @@ func TestReporter_GenereateAssessmentResults(t *testing.T) {
 }
 
 func TestReporter_FindControls(t *testing.T) {
-	compDef := readCompDef(t)
-	r := Reporter{
-		store: prepMemoryStore(t, compDef),
-		log:   testLogger,
-	}
+	cfg := prepConfig(t)
+	r, err := NewReporter(cfg)
+	require.NoError(t, err)
 
+	compDef := readCompDef(t)
 	implementationSettings := prepImplementationSettings(t, compDef)
 	foundControls := r.findControls(implementationSettings)
 	includeControls := *foundControls.ControlSelections[0].IncludeControls
@@ -106,14 +98,12 @@ func TestReporter_FindControls(t *testing.T) {
 }
 
 func TestReporter_ToOscalObservation(t *testing.T) {
-	compDef := readCompDef(t)
-	r := Reporter{
-		store: prepMemoryStore(t, compDef),
-		log:   testLogger,
-	}
+	cfg := prepConfig(t)
+	r, err := NewReporter(cfg)
+	require.NoError(t, err)
 
 	observationByCheck := pvpResults[0].ObservationsByCheck[0]
-	ruleSet, err := r.store.GetByCheckID(context.TODO(), observationByCheck.CheckID)
+	ruleSet, err := r.rulesStore.GetByCheckID(context.TODO(), observationByCheck.CheckID)
 	require.NoError(t, err)
 
 	oscalObs := r.toOscalObservation(observationByCheck, ruleSet)
@@ -149,16 +139,15 @@ func TestReporter_ToOscalObservation(t *testing.T) {
 }
 
 func TestReporter_GenerateFindings(t *testing.T) {
-	compDef := readCompDef(t)
-	r := Reporter{
-		store: prepMemoryStore(t, compDef),
-		log:   testLogger,
-	}
+	cfg := prepConfig(t)
+	r, err := NewReporter(cfg)
+	require.NoError(t, err)
 
+	compDef := readCompDef(t)
 	implementationSettings := prepImplementationSettings(t, compDef)
 
 	observationByCheck := pvpResults[0].ObservationsByCheck[0]
-	ruleSet, err := r.store.GetByCheckID(context.TODO(), observationByCheck.CheckID)
+	ruleSet, err := r.rulesStore.GetByCheckID(context.TODO(), observationByCheck.CheckID)
 	require.NoError(t, err)
 
 	oscalObservation := r.toOscalObservation(observationByCheck, ruleSet)
@@ -178,8 +167,6 @@ func TestReporter_GenerateFindings(t *testing.T) {
 
 // Load test component definition JSON
 func readCompDef(t *testing.T) oscalTypes.ComponentDefinition {
-	testDataPath := filepath.Join("../test/testdata", "component-definition-test.json")
-
 	file, err := os.Open(testDataPath)
 	require.NoError(t, err)
 
@@ -188,22 +175,6 @@ func readCompDef(t *testing.T) oscalTypes.ComponentDefinition {
 	require.NotNil(t, definition)
 
 	return *definition
-}
-
-// Create a memory store using test compdef
-func prepMemoryStore(t *testing.T, testComp oscalTypes.ComponentDefinition) *rules.MemoryStore {
-
-	testMemoryStore := rules.NewMemoryStore()
-
-	var comps []components.Component
-	for _, cp := range *testComp.Components {
-		adapters := components.NewDefinedComponentAdapter(cp)
-		comps = append(comps, adapters)
-	}
-	err := testMemoryStore.IndexAll(comps)
-	require.NoError(t, err)
-
-	return testMemoryStore
 }
 
 // Create implementation settings using test compdef
@@ -222,4 +193,15 @@ func prepImplementationSettings(t *testing.T, testComp oscalTypes.ComponentDefin
 
 	return *implementationSettings
 
+}
+
+func prepConfig(t *testing.T) *config.C2PConfig {
+	cfg := config.DefaultConfig()
+	cfg.PluginDir = "."
+	file, err := os.Open(testDataPath)
+	require.NoError(t, err)
+	definition, err := generators.NewComponentDefinition(file)
+	require.NoError(t, err)
+	cfg.ComponentDefinitions = append(cfg.ComponentDefinitions, *definition)
+	return cfg
 }
