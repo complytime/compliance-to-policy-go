@@ -13,11 +13,11 @@ import (
 	"time"
 
 	oscalTypes "github.com/defenseunicorns/go-oscal/src/types/oscal-1-1-2"
-	"github.com/oscal-compass/compliance-to-policy-go/v2/framework/config"
-	"github.com/oscal-compass/compliance-to-policy-go/v2/policy"
 	"github.com/oscal-compass/oscal-sdk-go/generators"
 	"github.com/oscal-compass/oscal-sdk-go/settings"
 	"github.com/stretchr/testify/require"
+
+	"github.com/oscal-compass/compliance-to-policy-go/v2/policy"
 )
 
 var (
@@ -94,7 +94,7 @@ func TestReporter_FindControls(t *testing.T) {
 	includeControls := *foundControls.ControlSelections[0].IncludeControls
 
 	require.Len(t, foundControls.ControlSelections, 1)
-	require.Equal(t, includeControls[0].ControlId, implementationSettings.AllControls()[0])
+	require.Equal(t, includeControls[0], implementationSettings.AllControls()[0])
 }
 
 func TestReporter_ToOscalObservation(t *testing.T) {
@@ -193,15 +193,4 @@ func prepImplementationSettings(t *testing.T, testComp oscalTypes.ComponentDefin
 
 	return *implementationSettings
 
-}
-
-func prepConfig(t *testing.T) *config.C2PConfig {
-	cfg := config.DefaultConfig()
-	cfg.PluginDir = "."
-	file, err := os.Open(testDataPath)
-	require.NoError(t, err)
-	definition, err := generators.NewComponentDefinition(file)
-	require.NoError(t, err)
-	cfg.ComponentDefinitions = append(cfg.ComponentDefinitions, *definition)
-	return cfg
 }
