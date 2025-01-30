@@ -261,18 +261,22 @@ func (r *Reporter) GenerateAssessmentResults(ctx context.Context, planHref strin
 	}
 	reviewedConrols := r.findControls(*implementationSettings)
 
-	oscalResults := []oscalTypes.Result{
-		{
-			UUID:             uuid.NewUUID(),
-			Title:            "Automated Assessment Result",
-			Description:      "Assessment Results Automatically Genererated from PVP Results",
-			Start:            time.Now(),
-			ReviewedControls: reviewedConrols,
-			Observations:     &oscalObservations,
-			Findings:         &oscalFindings,
-		},
+	oscalResult := oscalTypes.Result{
+		UUID:             uuid.NewUUID(),
+		Title:            "Automated Assessment Result",
+		Description:      "Assessment Results Automatically Genererated from PVP Results",
+		Start:            time.Now(),
+		ReviewedControls: reviewedConrols,
+		Observations:     &oscalObservations,
 	}
-	assessmentResults.Results = oscalResults
+
+	if len(oscalFindings) > 0 {
+		oscalResult.Findings = &oscalFindings
+	}
+
+	assessmentResults.Results = []oscalTypes.Result{
+		oscalResult,
+	}
 
 	return assessmentResults, nil
 
