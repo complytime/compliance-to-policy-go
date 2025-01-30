@@ -8,16 +8,15 @@ package framework
 import (
 	"context"
 	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
 	oscalTypes "github.com/defenseunicorns/go-oscal/src/types/oscal-1-1-2"
-	"github.com/oscal-compass/compliance-to-policy-go/v2/framework/config"
-	"github.com/oscal-compass/compliance-to-policy-go/v2/policy"
 	"github.com/oscal-compass/oscal-sdk-go/generators"
 	"github.com/oscal-compass/oscal-sdk-go/settings"
 	"github.com/stretchr/testify/require"
+
+	"github.com/oscal-compass/compliance-to-policy-go/v2/policy"
 )
 
 var (
@@ -54,7 +53,6 @@ var (
 			},
 		},
 	}
-	testDataPath = filepath.Join("../test/testdata", "component-definition-test.json")
 )
 
 func TestReporter_GenereateAssessmentResults(t *testing.T) {
@@ -94,7 +92,7 @@ func TestReporter_FindControls(t *testing.T) {
 	includeControls := *foundControls.ControlSelections[0].IncludeControls
 
 	require.Len(t, foundControls.ControlSelections, 1)
-	require.Equal(t, includeControls[0].ControlId, implementationSettings.AllControls()[0])
+	require.Equal(t, includeControls[0], implementationSettings.AllControls()[0])
 }
 
 func TestReporter_ToOscalObservation(t *testing.T) {
@@ -151,18 +149,79 @@ func TestReporter_GenerateFindings(t *testing.T) {
 	require.NoError(t, err)
 
 	oscalObservation := r.toOscalObservation(observationByCheck, ruleSet)
-	findings, err := r.generateFindings(oscalObservation, ruleSet, implementationSettings)
-	require.NoError(t, err)
-	require.Len(t, findings, 1)
 
-	relObs := *findings[0].RelatedObservations
-	require.Len(t, relObs, 1)
-	require.Equal(t, relObs[0].ObservationUuid, oscalObservation.UUID)
+	tests := []struct {
+		name         string
+		initFindings []oscalTypes.Finding
+		assertFunc   func(*testing.T, []oscalTypes.Finding)
+	}{
+		{
+			name:         "Success/NewFinding",
+			initFindings: []oscalTypes.Finding{},
+			assertFunc: func(t *testing.T, findings []oscalTypes.Finding) {
+				require.Len(t, findings, 1)
+				relObs := *findings[0].RelatedObservations
+				require.Len(t, relObs, 1)
+				require.Equal(t, relObs[0].ObservationUuid, oscalObservation.UUID)
+			},
+		},
+		{
+			name: "Success/ExistingFindingWithMatchingControl",
+			initFindings: []oscalTypes.Finding{
+				{
+					Target: oscalTypes.FindingTarget{
+						TargetId: "CIS-2.1_smt",
+						Type:     "statement-id",
+						Status: oscalTypes.ObjectiveStatus{
+							State: "not-satisfied",
+						},
+					},
+					RelatedObservations: &[]oscalTypes.RelatedObservation{
+						{
+							ObservationUuid: "1234",
+						},
+					},
+				},
+			},
+			assertFunc: func(t *testing.T, findings []oscalTypes.Finding) {
+				require.Len(t, findings, 1)
+				relObs := *findings[0].RelatedObservations
+				require.Len(t, relObs, 2)
+			},
+		},
+		{
+			name: "Success/ExistingFindingNoMatchingControl",
+			initFindings: []oscalTypes.Finding{
+				{
+					Target: oscalTypes.FindingTarget{
+						TargetId: "X_smt",
+						Type:     "statement-id",
+						Status: oscalTypes.ObjectiveStatus{
+							State: "not-satisfied",
+						},
+					},
+					RelatedObservations: &[]oscalTypes.RelatedObservation{
+						{
+							ObservationUuid: "1234",
+						},
+					},
+				},
+			},
+			assertFunc: func(t *testing.T, findings []oscalTypes.Finding) {
+				require.Len(t, findings, 2)
+				for _, f := range findings {
+					relObs := *f.RelatedObservations
+					require.Len(t, relObs, 1)
+				}
+			},
+		},
+	}
 
-	findingTarget := findings[0].Target
-	require.Equal(t, findingTarget.TargetId, "CIS-2.1_smt")
-	require.Equal(t, findingTarget.Type, "statement-id")
-	require.Equal(t, findingTarget.Status.State, "not-satisfied")
+	for _, c := range tests {
+		findings, err := r.generateFindings(c.initFindings, oscalObservation, ruleSet, implementationSettings)
+		require.NoError(t, err)
+		c.assertFunc(t, findings)
+	}
 }
 
 // Load test component definition JSON
@@ -193,15 +252,4 @@ func prepImplementationSettings(t *testing.T, testComp oscalTypes.ComponentDefin
 
 	return *implementationSettings
 
-}
-
-func prepConfig(t *testing.T) *config.C2PConfig {
-	cfg := config.DefaultConfig()
-	cfg.PluginDir = "."
-	file, err := os.Open(testDataPath)
-	require.NoError(t, err)
-	definition, err := generators.NewComponentDefinition(file)
-	require.NoError(t, err)
-	cfg.ComponentDefinitions = append(cfg.ComponentDefinitions, *definition)
-	return cfg
 }

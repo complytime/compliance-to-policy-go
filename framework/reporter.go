@@ -14,17 +14,13 @@ import (
 	"github.com/defenseunicorns/go-oscal/src/pkg/uuid"
 	oscalTypes "github.com/defenseunicorns/go-oscal/src/types/oscal-1-1-2"
 	"github.com/hashicorp/go-hclog"
-	"github.com/oscal-compass/compliance-to-policy-go/v2/framework/config"
-	"github.com/oscal-compass/compliance-to-policy-go/v2/policy"
 	"github.com/oscal-compass/oscal-sdk-go/extensions"
-	"github.com/oscal-compass/oscal-sdk-go/models"
+	"github.com/oscal-compass/oscal-sdk-go/generators"
 	"github.com/oscal-compass/oscal-sdk-go/rules"
 	"github.com/oscal-compass/oscal-sdk-go/settings"
-)
 
-const (
-	defaultVersion = "0.1.0"
-	defaultTitle   = "Automated Assessment Results"
+	"github.com/oscal-compass/compliance-to-policy-go/v2/framework/config"
+	"github.com/oscal-compass/compliance-to-policy-go/v2/policy"
 )
 
 type Reporter struct {
@@ -53,7 +49,7 @@ type generateOpts struct {
 }
 
 func (g *generateOpts) defaults() {
-	g.title = models.DefaultRequiredString
+	g.title = generators.SampleRequiredString
 }
 
 // GenerateOption defines optional arguments to tune the behavior of GenerateAssessmentResults
@@ -66,11 +62,19 @@ func WithTitle(title string) GenerateOption {
 	}
 }
 
+// getFindingForTarget returns an existing finding that matches the targetId if one exists in findings
+func (r *Reporter) getFindingForTarget(findings []oscalTypes.Finding, targetId string) *oscalTypes.Finding {
+
+	for _, f := range findings {
+		if f.Target.TargetId == targetId {
+			return &f //if finding is found, return a pointer to that finding
+		}
+	}
+	return nil
+}
+
 // Generate OSCAL Findings for all non-passing controls in the OSCAL Observation
-func (r *Reporter) generateFindings(observation oscalTypes.Observation, ruleSet extensions.RuleSet, implementationSettings settings.ImplementationSettings) ([]oscalTypes.Finding, error) {
-
-	findings := make([]oscalTypes.Finding, 0)
-
+func (r *Reporter) generateFindings(findings []oscalTypes.Finding, observation oscalTypes.Observation, ruleSet extensions.RuleSet, implementationSettings settings.ImplementationSettings) ([]oscalTypes.Finding, error) {
 	applicableControls, err := implementationSettings.ApplicableControls(ruleSet.Rule.ID)
 	if err != nil {
 		return findings, err
@@ -79,39 +83,41 @@ func (r *Reporter) generateFindings(observation oscalTypes.Observation, ruleSet 
 	for _, controlId := range applicableControls {
 
 		targetId := fmt.Sprintf("%s_smt", controlId)
-		finding := oscalTypes.Finding{
-			UUID: uuid.NewUUID(),
-			RelatedObservations: &[]oscalTypes.RelatedObservation{
-				{
-					ObservationUuid: observation.UUID,
+
+		finding := r.getFindingForTarget(findings, targetId)
+
+		if finding == nil { // if an empty finding was returned, populate initial values and append
+			newFinding := oscalTypes.Finding{
+				UUID: uuid.NewUUID(),
+				RelatedObservations: &[]oscalTypes.RelatedObservation{
+					{
+						ObservationUuid: observation.UUID,
+					},
 				},
-			},
-			Target: oscalTypes.FindingTarget{
-				TargetId: targetId,
-				Type:     "statement-id",
-				Status: oscalTypes.ObjectiveStatus{
-					State: "not-satisfied",
+				Target: oscalTypes.FindingTarget{
+					TargetId: targetId,
+					Type:     "statement-id",
+					Status: oscalTypes.ObjectiveStatus{
+						State: "not-satisfied",
+					},
 				},
-			},
+			}
+			findings = append(findings, newFinding)
+		} else {
+			relObs := oscalTypes.RelatedObservation{
+				ObservationUuid: observation.UUID,
+			}
+			*finding.RelatedObservations = append(*finding.RelatedObservations, relObs)
 		}
-		findings = append(findings, finding)
 	}
 
 	return findings, nil
 }
 
-// Find all controls form the implementation settings
+// findControls finds all controls from the implementation settings
 func (r *Reporter) findControls(implementationSettings settings.ImplementationSettings) oscalTypes.ReviewedControls {
 
-	includeControls := []oscalTypes.AssessedControlsSelectControlById{}
-
-	// iterate over all controls to get list of included control IDs
-	for _, controlId := range implementationSettings.AllControls() {
-		selectedControlById := oscalTypes.AssessedControlsSelectControlById{
-			ControlId: controlId,
-		}
-		includeControls = append(includeControls, selectedControlById)
-	}
+	includeControls := implementationSettings.AllControls()
 
 	assessedControls := []oscalTypes.AssessedControls{
 		{
@@ -194,7 +200,7 @@ func (r *Reporter) toOscalObservation(observationByCheck policy.ObservationByChe
 	return oscalObservation
 }
 
-// Convert PVPResults to OSCAL AsessmentResults
+// GenerateAssessmentResults converts PVPResults to OSCAL AsessmentResults
 func (r *Reporter) GenerateAssessmentResults(ctx context.Context, planHref string, implementationSettings *settings.ImplementationSettings, results []policy.PVPResult, opts ...GenerateOption) (oscalTypes.AssessmentResults, error) {
 
 	options := generateOpts{}
@@ -209,12 +215,8 @@ func (r *Reporter) GenerateAssessmentResults(ctx context.Context, planHref strin
 		Href: planHref,
 	}
 
-	metadata := oscalTypes.Metadata{
-		Title:        options.title,
-		LastModified: time.Now(),
-		Version:      defaultVersion,
-		OscalVersion: models.OSCALVersion,
-	}
+	metadata := generators.NewSampleMetadata()
+	metadata.Title = options.title
 
 	assessmentResults := oscalTypes.AssessmentResults{
 		UUID:     uuid.NewUUID(),
@@ -243,12 +245,11 @@ func (r *Reporter) GenerateAssessmentResults(ctx context.Context, planHref strin
 				for _, prop := range *subject.Props {
 					if prop.Name == "result" {
 						if prop.Value != policy.ResultPass.String() {
-							obsFindings, err := r.generateFindings(obs, rule, *implementationSettings)
+							oscalFindings, err = r.generateFindings(oscalFindings, obs, rule, *implementationSettings)
 							if err != nil {
 								return assessmentResults, fmt.Errorf("failed to create finding for check: %w", err)
 							}
-							oscalFindings = append(oscalFindings, obsFindings...)
-							r.log.Info(fmt.Sprintf("Generated finding for rule %s", rule.Rule.ID))
+							r.log.Info(fmt.Sprintf("generated finding for rule %s", rule.Rule.ID))
 
 						}
 					}
