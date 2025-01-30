@@ -8,6 +8,7 @@ package framework
 import (
 	"context"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -53,6 +54,7 @@ var (
 			},
 		},
 	}
+	testDataPath = filepath.Join("../test/testdata", "component-definition-test.json")
 )
 
 func TestReporter_GenereateAssessmentResults(t *testing.T) {

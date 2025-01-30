@@ -80,13 +80,13 @@ func (r *Reporter) generateFindings(findings []oscalTypes.Finding, observation o
 		return findings, err
 	}
 
-	for _, controlId := range applicableControls {
+	for _, control := range applicableControls {
 
-		targetId := fmt.Sprintf("%s_smt", controlId)
+		targetId := fmt.Sprintf("%s_smt", control.ControlId)
 
 		finding := r.getFindingForTarget(findings, targetId)
 
-		if finding == nil { // if an empty finding was returned, populate initial values and append
+		if finding == nil { // if an empty finding was returned, create a new one and append to findings
 			newFinding := oscalTypes.Finding{
 				UUID: uuid.NewUUID(),
 				RelatedObservations: &[]oscalTypes.RelatedObservation{
@@ -107,7 +107,7 @@ func (r *Reporter) generateFindings(findings []oscalTypes.Finding, observation o
 			relObs := oscalTypes.RelatedObservation{
 				ObservationUuid: observation.UUID,
 			}
-			*finding.RelatedObservations = append(*finding.RelatedObservations, relObs)
+			*finding.RelatedObservations = append(*finding.RelatedObservations, relObs) // add new related obs to existing finding for targetId
 		}
 	}
 
@@ -209,7 +209,7 @@ func (r *Reporter) GenerateAssessmentResults(ctx context.Context, planHref strin
 		opt(&options)
 	}
 
-	r.log.Info(fmt.Sprintf("Generating assessments results for plan %s", planHref))
+	r.log.Info(fmt.Sprintf("generating assessments results for plan %s", planHref))
 
 	importAp := oscalTypes.ImportAp{
 		Href: planHref,
