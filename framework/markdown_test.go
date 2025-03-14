@@ -180,7 +180,6 @@ func TestCreateTemplateValues(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error creating TemplateValues: %v", err)
 	}
-	require.NoError(t, err)
 	require.Equal(t, test.expected, result)
 }
 
@@ -238,17 +237,20 @@ func TestGenerateAssessmentResultsMd(t *testing.T) {
 		AssessmentResults: assessmentResults,
 	}
 
+	// Read the expected markdown file before running the test
+	expectedmd, err := os.ReadFile("../test/testdata/assessment-results.md")
+	if err != nil {
+		t.Fatalf("Failed to read file %s: %v", "../test/testdata/assessment-results.md", err)
+	}
+
 	// Run test
 	assessmentResultsMd, err := templateValues.GenerateAssessmentResultsMd("assessment-results.md")
 	if err != nil {
 		t.Errorf("Error generating markdown: %v", err)
 	}
-	expectedmd, err := os.ReadFile("../test/testdata/assessment-results.md")
-	if err != nil {
-		t.Fatalf("Failed to read file %s: %v", expectedmd, err)
-	}
+
 	// Compare the generated markdown with the expected markdown contents
 	if !bytes.Equal(expectedmd, assessmentResultsMd) {
-		t.Errorf("The generated markdown file is not equals to expected markdown")
+		t.Errorf("The generated markdown file is not equal to expected markdown")
 	}
 }
