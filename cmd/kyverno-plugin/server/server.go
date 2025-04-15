@@ -18,8 +18,9 @@ import (
 )
 
 var (
-	_      policy.Provider = (*Plugin)(nil)
-	logger hclog.Logger    = logging.NewPluginLogger()
+	_      policy.Generator  = (*Plugin)(nil)
+	_      policy.Aggregator = (*Plugin)(nil)
+	logger hclog.Logger      = logging.NewPluginLogger()
 )
 
 func Logger() hclog.Logger {

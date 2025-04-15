@@ -18,7 +18,10 @@ import (
 	"github.com/oscal-compass/compliance-to-policy-go/v2/plugin"
 )
 
-var _ policy.Provider = (*PluginServer)(nil)
+var (
+	_      policy.Generator  = (*PluginServer)(nil)
+	_      policy.Aggregator = (*PluginServer)(nil)
+)
 
 type PluginServer struct {}
 
@@ -43,7 +46,8 @@ func (s *PluginServer) GetResults(p policy.Policy) (policy.PVPResult, error) {
 func main() {
 	myPlugin := &PluginServer{}
 	pluginByType := map[string]hplugin.Plugin{
-		plugin.PVPPluginName: &plugin.PVPPlugin{Impl: myPlugin},
+		plugin.AggregationPluginName: &plugin.AggregatorPlugin{Impl: myPlugin},
+		plugin.GenerationPluginName: &plugin.GeneratorPlugin{Impl: myPlugin},
 	}
 	plugin.Register(pluginByType)
 }
@@ -76,3 +80,10 @@ configuration options and defaults.
   ]
 }
 ```
+
+## Plugin Lifecycle
+
+- **Discovery**: Requested plugins are located in the defined directory
+- **Initialization**: Plugin binaries are executed and the main function is executed with serve configuration
+- **Configuration**: The plugin is configured with pre-existing options and user-selected options
+- **Clean**: Plugins are stopped and shutdown

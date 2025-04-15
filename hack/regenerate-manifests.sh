@@ -16,7 +16,8 @@ cat > "${SCRIPT_DIR}/../c2p-plugins/c2p-kyverno-manifest.json" << EOF
     "description": "Kyverno PVP Plugin",
     "version": "0.0.1",
     "types": [
-      "pvp"
+      "generation",
+      "aggregation"
     ]
   },
   "executablePath": "kyverno-plugin",
@@ -56,7 +57,8 @@ cat > "${SCRIPT_DIR}/../c2p-plugins/c2p-ocm-manifest.json" << EOF
    "description": "OCM PVP Plugin",
    "version": "0.0.1",
    "types": [
-     "pvp"
+     "generation",
+     "aggregation"
    ]
  },
  "executablePath": "ocm-plugin",

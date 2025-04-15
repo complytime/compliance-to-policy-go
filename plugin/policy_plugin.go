@@ -9,6 +9,7 @@ import (
 	"context"
 
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"google.golang.org/grpc/codes"
 
@@ -17,43 +18,59 @@ import (
 )
 
 // Plugin must return an RPC server for this plugin type.
-var _ proto.PolicyEngineServer = (*pvpService)(nil)
+var (
+	_ proto.AggregatorServer = (*aggregatorService)(nil)
+	_ proto.GeneratorServer  = (*generatorService)(nil)
+)
 
-type pvpService struct {
-	proto.UnimplementedPolicyEngineServer
-	Impl policy.Provider
+type aggregatorService struct {
+	proto.UnimplementedAggregatorServer
+	Impl policy.Aggregator
 }
 
-func FromPVP(pe policy.Provider) proto.PolicyEngineServer {
-	return &pvpService{
+func FromAggregator(pe policy.Aggregator) proto.AggregatorServer {
+	return &aggregatorService{
 		Impl: pe,
 	}
 }
 
-func (p *pvpService) Configure(ctx context.Context, request *proto.ConfigureRequest) (*proto.ConfigureResponse, error) {
+func (p *aggregatorService) Configure(ctx context.Context, request *proto.ConfigureRequest) (*emptypb.Empty, error) {
 	if err := p.Impl.Configure(request.Settings); err != nil {
-		return &proto.ConfigureResponse{}, status.Error(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	// policy.Provider.Configure currently only returns an error, so using an empty proto.ConifgureResponse
-	return &proto.ConfigureResponse{}, nil
+	return nil, nil
 }
 
-func (p *pvpService) Generate(ctx context.Context, request *proto.PolicyRequest) (*proto.GenerateResponse, error) {
-	policy := NewPolicyFromProto(request)
-	if err := p.Impl.Generate(policy); err != nil {
-		return &proto.GenerateResponse{}, status.Error(codes.Internal, err.Error())
-	}
-
-	// policy.Provider.Generate currently only returns an error, so using an empty proto.GenerateResponse
-	return &proto.GenerateResponse{}, nil
-}
-
-func (p *pvpService) GetResults(ctx context.Context, request *proto.PolicyRequest) (*proto.ResultsResponse, error) {
-	policy := NewPolicyFromProto(request)
-	result, err := p.Impl.GetResults(policy)
+func (p *aggregatorService) GetResults(ctx context.Context, request *proto.PolicyRequest) (*proto.ResultsResponse, error) {
+	result, err := p.Impl.GetResults(NewPolicyFromProto(request))
 	if err != nil {
 		return &proto.ResultsResponse{}, status.Error(codes.Internal, err.Error())
 	}
 	return &proto.ResultsResponse{Result: ResultsToProto(result)}, nil
+}
+
+type generatorService struct {
+	proto.UnimplementedGeneratorServer
+	Impl policy.Generator
+}
+
+func FromGenerator(pe policy.Generator) proto.GeneratorServer {
+	return &generatorService{
+		Impl: pe,
+	}
+}
+
+func (p *generatorService) Configure(ctx context.Context, request *proto.ConfigureRequest) (*emptypb.Empty, error) {
+	if err := p.Impl.Configure(request.Settings); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	return nil, nil
+}
+
+func (p *generatorService) Generate(ctx context.Context, request *proto.PolicyRequest) (*emptypb.Empty, error) {
+	if err := p.Impl.Generate(NewPolicyFromProto(request)); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	return nil, nil
 }

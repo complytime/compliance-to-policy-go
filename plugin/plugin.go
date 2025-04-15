@@ -17,8 +17,9 @@ import (
 )
 
 const (
-	// PVPPluginName is used to dispense policy validation point plugin type
-	PVPPluginName = "pvp"
+	// AggregationPluginName is used to dispense policy validation point plugin type
+	AggregationPluginName = "aggregation"
+	GenerationPluginName  = "generation"
 	// The ProtocolVersion is the version that must match between the core
 	// and plugins.
 	ProtocolVersion = 1
@@ -42,23 +43,41 @@ var Handshake = plugin.HandshakeConfig{
 
 // SupportedPlugins is the map of plugins we can dispense.
 var SupportedPlugins = map[string]plugin.Plugin{
-	PVPPluginName: &PVPPlugin{},
+	AggregationPluginName: &AggregatorPlugin{},
+	GenerationPluginName:  &GeneratorPlugin{},
 }
 
-var _ plugin.GRPCPlugin = (*PVPPlugin)(nil)
+var _ plugin.GRPCPlugin = (*AggregatorPlugin)(nil)
+var _ plugin.GRPCPlugin = (*GeneratorPlugin)(nil)
 
-// PVPPlugin is concrete implementation of the policy.Provider written in Go for use
+// AggregatorPlugin is concrete implementation of the policy.Aggregator written in Go for use
 // with go-plugin.
-type PVPPlugin struct {
+type AggregatorPlugin struct {
 	plugin.Plugin
-	Impl policy.Provider
+	Impl policy.Aggregator
 }
 
-func (p *PVPPlugin) GRPCServer(broker *plugin.GRPCBroker, s *grpc.Server) error {
-	proto.RegisterPolicyEngineServer(s, FromPVP(p.Impl))
+func (p *AggregatorPlugin) GRPCServer(broker *plugin.GRPCBroker, s *grpc.Server) error {
+	proto.RegisterAggregatorServer(s, FromAggregator(p.Impl))
 	return nil
 }
 
-func (p *PVPPlugin) GRPCClient(ctx context.Context, broker *plugin.GRPCBroker, c *grpc.ClientConn) (interface{}, error) {
-	return &pvpClient{client: proto.NewPolicyEngineClient(c)}, nil
+func (p *AggregatorPlugin) GRPCClient(ctx context.Context, broker *plugin.GRPCBroker, c *grpc.ClientConn) (interface{}, error) {
+	return &aggregatorClient{client: proto.NewAggregatorClient(c)}, nil
+}
+
+// GeneratorPlugin is concrete implementation of the policy.Generator written in Go for use
+// with go-plugin.
+type GeneratorPlugin struct {
+	plugin.Plugin
+	Impl policy.Generator
+}
+
+func (p *GeneratorPlugin) GRPCServer(broker *plugin.GRPCBroker, s *grpc.Server) error {
+	proto.RegisterGeneratorServer(s, FromGenerator(p.Impl))
+	return nil
+}
+
+func (p *GeneratorPlugin) GRPCClient(ctx context.Context, broker *plugin.GRPCBroker, c *grpc.ClientConn) (interface{}, error) {
+	return &generatorClient{client: proto.NewGeneratorClient(c)}, nil
 }

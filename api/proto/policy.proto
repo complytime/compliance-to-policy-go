@@ -5,14 +5,12 @@ package protocols;
 option go_package = "github.com/oscal-compass/compliance-to-policy-go/v2/api/proto/";
 
 import "api/proto/models.proto";
+import "google/protobuf/empty.proto";
 
 // PVP policy request
 message PolicyRequest {
   repeated protocols.Rule rule = 1;
 }
-
-// genereate PVP policy response
-message GenerateResponse {}
 
 // get PVP results response
 message ResultsResponse {
@@ -23,11 +21,15 @@ message ConfigureRequest {
   map<string, string> settings = 1;
 }
 
-message ConfigureResponse {}
-
-// get policy results from PVP
-service PolicyEngine {
-  rpc Generate(PolicyRequest) returns (GenerateResponse);
-  rpc GetResults(PolicyRequest) returns (ResultsResponse);
-  rpc Configure(ConfigureRequest) returns (ConfigureResponse);
+// Generate policy artifacts
+service Generator {
+  rpc Generate(PolicyRequest) returns (google.protobuf.Empty);
+  rpc Configure(ConfigureRequest) returns (google.protobuf.Empty);
 }
+
+// Aggregate and normalized policy results
+service Aggregator {
+  rpc GetResults(PolicyRequest) returns (ResultsResponse);
+  rpc Configure(ConfigureRequest) returns (google.protobuf.Empty);
+}
+

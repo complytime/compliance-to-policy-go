@@ -11,6 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -19,181 +20,287 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	PolicyEngine_Generate_FullMethodName   = "/protocols.PolicyEngine/Generate"
-	PolicyEngine_GetResults_FullMethodName = "/protocols.PolicyEngine/GetResults"
-	PolicyEngine_Configure_FullMethodName  = "/protocols.PolicyEngine/Configure"
+	Generator_Generate_FullMethodName  = "/protocols.Generator/Generate"
+	Generator_Configure_FullMethodName = "/protocols.Generator/Configure"
 )
 
-// PolicyEngineClient is the client API for PolicyEngine service.
+// GeneratorClient is the client API for Generator service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// get policy results from PVP
-type PolicyEngineClient interface {
-	Generate(ctx context.Context, in *PolicyRequest, opts ...grpc.CallOption) (*GenerateResponse, error)
-	GetResults(ctx context.Context, in *PolicyRequest, opts ...grpc.CallOption) (*ResultsResponse, error)
-	Configure(ctx context.Context, in *ConfigureRequest, opts ...grpc.CallOption) (*ConfigureResponse, error)
+// Generate policy artifacts
+type GeneratorClient interface {
+	Generate(ctx context.Context, in *PolicyRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	Configure(ctx context.Context, in *ConfigureRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
-type policyEngineClient struct {
+type generatorClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewPolicyEngineClient(cc grpc.ClientConnInterface) PolicyEngineClient {
-	return &policyEngineClient{cc}
+func NewGeneratorClient(cc grpc.ClientConnInterface) GeneratorClient {
+	return &generatorClient{cc}
 }
 
-func (c *policyEngineClient) Generate(ctx context.Context, in *PolicyRequest, opts ...grpc.CallOption) (*GenerateResponse, error) {
+func (c *generatorClient) Generate(ctx context.Context, in *PolicyRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GenerateResponse)
-	err := c.cc.Invoke(ctx, PolicyEngine_Generate_FullMethodName, in, out, cOpts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, Generator_Generate_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *policyEngineClient) GetResults(ctx context.Context, in *PolicyRequest, opts ...grpc.CallOption) (*ResultsResponse, error) {
+func (c *generatorClient) Configure(ctx context.Context, in *ConfigureRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ResultsResponse)
-	err := c.cc.Invoke(ctx, PolicyEngine_GetResults_FullMethodName, in, out, cOpts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, Generator_Configure_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *policyEngineClient) Configure(ctx context.Context, in *ConfigureRequest, opts ...grpc.CallOption) (*ConfigureResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ConfigureResponse)
-	err := c.cc.Invoke(ctx, PolicyEngine_Configure_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// PolicyEngineServer is the server API for PolicyEngine service.
-// All implementations must embed UnimplementedPolicyEngineServer
+// GeneratorServer is the server API for Generator service.
+// All implementations must embed UnimplementedGeneratorServer
 // for forward compatibility.
 //
-// get policy results from PVP
-type PolicyEngineServer interface {
-	Generate(context.Context, *PolicyRequest) (*GenerateResponse, error)
-	GetResults(context.Context, *PolicyRequest) (*ResultsResponse, error)
-	Configure(context.Context, *ConfigureRequest) (*ConfigureResponse, error)
-	mustEmbedUnimplementedPolicyEngineServer()
+// Generate policy artifacts
+type GeneratorServer interface {
+	Generate(context.Context, *PolicyRequest) (*emptypb.Empty, error)
+	Configure(context.Context, *ConfigureRequest) (*emptypb.Empty, error)
+	mustEmbedUnimplementedGeneratorServer()
 }
 
-// UnimplementedPolicyEngineServer must be embedded to have
+// UnimplementedGeneratorServer must be embedded to have
 // forward compatible implementations.
 //
 // NOTE: this should be embedded by value instead of pointer to avoid a nil
 // pointer dereference when methods are called.
-type UnimplementedPolicyEngineServer struct{}
+type UnimplementedGeneratorServer struct{}
 
-func (UnimplementedPolicyEngineServer) Generate(context.Context, *PolicyRequest) (*GenerateResponse, error) {
+func (UnimplementedGeneratorServer) Generate(context.Context, *PolicyRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Generate not implemented")
 }
-func (UnimplementedPolicyEngineServer) GetResults(context.Context, *PolicyRequest) (*ResultsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetResults not implemented")
-}
-func (UnimplementedPolicyEngineServer) Configure(context.Context, *ConfigureRequest) (*ConfigureResponse, error) {
+func (UnimplementedGeneratorServer) Configure(context.Context, *ConfigureRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Configure not implemented")
 }
-func (UnimplementedPolicyEngineServer) mustEmbedUnimplementedPolicyEngineServer() {}
-func (UnimplementedPolicyEngineServer) testEmbeddedByValue()                      {}
+func (UnimplementedGeneratorServer) mustEmbedUnimplementedGeneratorServer() {}
+func (UnimplementedGeneratorServer) testEmbeddedByValue()                   {}
 
-// UnsafePolicyEngineServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to PolicyEngineServer will
+// UnsafeGeneratorServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to GeneratorServer will
 // result in compilation errors.
-type UnsafePolicyEngineServer interface {
-	mustEmbedUnimplementedPolicyEngineServer()
+type UnsafeGeneratorServer interface {
+	mustEmbedUnimplementedGeneratorServer()
 }
 
-func RegisterPolicyEngineServer(s grpc.ServiceRegistrar, srv PolicyEngineServer) {
-	// If the following call pancis, it indicates UnimplementedPolicyEngineServer was
+func RegisterGeneratorServer(s grpc.ServiceRegistrar, srv GeneratorServer) {
+	// If the following call pancis, it indicates UnimplementedGeneratorServer was
 	// embedded by pointer and is nil.  This will cause panics if an
 	// unimplemented method is ever invoked, so we test this at initialization
 	// time to prevent it from happening at runtime later due to I/O.
 	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
 		t.testEmbeddedByValue()
 	}
-	s.RegisterService(&PolicyEngine_ServiceDesc, srv)
+	s.RegisterService(&Generator_ServiceDesc, srv)
 }
 
-func _PolicyEngine_Generate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Generator_Generate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PolicyRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PolicyEngineServer).Generate(ctx, in)
+		return srv.(GeneratorServer).Generate(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: PolicyEngine_Generate_FullMethodName,
+		FullMethod: Generator_Generate_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PolicyEngineServer).Generate(ctx, req.(*PolicyRequest))
+		return srv.(GeneratorServer).Generate(ctx, req.(*PolicyRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PolicyEngine_GetResults_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PolicyRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(PolicyEngineServer).GetResults(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: PolicyEngine_GetResults_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PolicyEngineServer).GetResults(ctx, req.(*PolicyRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _PolicyEngine_Configure_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Generator_Configure_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ConfigureRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PolicyEngineServer).Configure(ctx, in)
+		return srv.(GeneratorServer).Configure(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: PolicyEngine_Configure_FullMethodName,
+		FullMethod: Generator_Configure_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PolicyEngineServer).Configure(ctx, req.(*ConfigureRequest))
+		return srv.(GeneratorServer).Configure(ctx, req.(*ConfigureRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// PolicyEngine_ServiceDesc is the grpc.ServiceDesc for PolicyEngine service.
+// Generator_ServiceDesc is the grpc.ServiceDesc for Generator service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var PolicyEngine_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "protocols.PolicyEngine",
-	HandlerType: (*PolicyEngineServer)(nil),
+var Generator_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "protocols.Generator",
+	HandlerType: (*GeneratorServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "Generate",
-			Handler:    _PolicyEngine_Generate_Handler,
-		},
-		{
-			MethodName: "GetResults",
-			Handler:    _PolicyEngine_GetResults_Handler,
+			Handler:    _Generator_Generate_Handler,
 		},
 		{
 			MethodName: "Configure",
-			Handler:    _PolicyEngine_Configure_Handler,
+			Handler:    _Generator_Configure_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "api/proto/policy.proto",
+}
+
+const (
+	Aggregator_GetResults_FullMethodName = "/protocols.Aggregator/GetResults"
+	Aggregator_Configure_FullMethodName  = "/protocols.Aggregator/Configure"
+)
+
+// AggregatorClient is the client API for Aggregator service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// Aggregate and normalized policy results
+type AggregatorClient interface {
+	GetResults(ctx context.Context, in *PolicyRequest, opts ...grpc.CallOption) (*ResultsResponse, error)
+	Configure(ctx context.Context, in *ConfigureRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+}
+
+type aggregatorClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewAggregatorClient(cc grpc.ClientConnInterface) AggregatorClient {
+	return &aggregatorClient{cc}
+}
+
+func (c *aggregatorClient) GetResults(ctx context.Context, in *PolicyRequest, opts ...grpc.CallOption) (*ResultsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ResultsResponse)
+	err := c.cc.Invoke(ctx, Aggregator_GetResults_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aggregatorClient) Configure(ctx context.Context, in *ConfigureRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, Aggregator_Configure_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// AggregatorServer is the server API for Aggregator service.
+// All implementations must embed UnimplementedAggregatorServer
+// for forward compatibility.
+//
+// Aggregate and normalized policy results
+type AggregatorServer interface {
+	GetResults(context.Context, *PolicyRequest) (*ResultsResponse, error)
+	Configure(context.Context, *ConfigureRequest) (*emptypb.Empty, error)
+	mustEmbedUnimplementedAggregatorServer()
+}
+
+// UnimplementedAggregatorServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedAggregatorServer struct{}
+
+func (UnimplementedAggregatorServer) GetResults(context.Context, *PolicyRequest) (*ResultsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetResults not implemented")
+}
+func (UnimplementedAggregatorServer) Configure(context.Context, *ConfigureRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Configure not implemented")
+}
+func (UnimplementedAggregatorServer) mustEmbedUnimplementedAggregatorServer() {}
+func (UnimplementedAggregatorServer) testEmbeddedByValue()                    {}
+
+// UnsafeAggregatorServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to AggregatorServer will
+// result in compilation errors.
+type UnsafeAggregatorServer interface {
+	mustEmbedUnimplementedAggregatorServer()
+}
+
+func RegisterAggregatorServer(s grpc.ServiceRegistrar, srv AggregatorServer) {
+	// If the following call pancis, it indicates UnimplementedAggregatorServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&Aggregator_ServiceDesc, srv)
+}
+
+func _Aggregator_GetResults_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PolicyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AggregatorServer).GetResults(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Aggregator_GetResults_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AggregatorServer).GetResults(ctx, req.(*PolicyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Aggregator_Configure_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ConfigureRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AggregatorServer).Configure(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Aggregator_Configure_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AggregatorServer).Configure(ctx, req.(*ConfigureRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// Aggregator_ServiceDesc is the grpc.ServiceDesc for Aggregator service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var Aggregator_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "protocols.Aggregator",
+	HandlerType: (*AggregatorServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetResults",
+			Handler:    _Aggregator_GetResults_Handler,
+		},
+		{
+			MethodName: "Configure",
+			Handler:    _Aggregator_Configure_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
