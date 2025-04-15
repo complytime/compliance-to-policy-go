@@ -7,7 +7,6 @@ package plugin
 
 import (
 	"context"
-	"regexp"
 
 	"github.com/hashicorp/go-plugin"
 	"google.golang.org/grpc"
@@ -17,19 +16,20 @@ import (
 )
 
 const (
-	// AggregationPluginName is used to dispense policy validation point plugin type
+	// AggregationPluginName is used to dispense an AggregatorPlugin type
 	AggregationPluginName = "aggregation"
-	GenerationPluginName  = "generation"
+	// GenerationPluginName is used to dispense a GeneratorPlugin type
+	GenerationPluginName = "generation"
 	// The ProtocolVersion is the version that must match between the core
 	// and plugins.
 	ProtocolVersion = 1
 )
 
-// IdentifierPattern defines criteria the plugin id must comply with.
-// It includes the following criteria:
-//  1. Consist of lowercase alphanumeric characters
-//  2. May contain underscore (_) or hyphen (-) characters.
-var IdentifierPattern = regexp.MustCompile("^[a-z0-9_-]+$")
+// Validate ensures the plugin id is valid based on the
+// plugin IdentifierPattern.
+func (i ID) Validate() bool {
+	return IdentifierPattern.MatchString(i.String())
+}
 
 // Handshake is a common handshake that is shared by plugin and host.
 var Handshake = plugin.HandshakeConfig{
