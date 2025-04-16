@@ -25,12 +25,6 @@ const (
 	ProtocolVersion = 1
 )
 
-// Validate ensures the plugin id is valid based on the
-// plugin IdentifierPattern.
-func (i ID) Validate() bool {
-	return IdentifierPattern.MatchString(i.String())
-}
-
 // Handshake is a common handshake that is shared by plugin and host.
 var Handshake = plugin.HandshakeConfig{
 	ProtocolVersion: ProtocolVersion,

@@ -20,3 +20,9 @@ type ID string
 func (i ID) String() string {
 	return string(i)
 }
+
+// Validate ensures the plugin id is valid based on the
+// plugin IdentifierPattern.
+func (i ID) Validate() bool {
+	return IdentifierPattern.MatchString(i.String())
+}
