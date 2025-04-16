@@ -22,8 +22,7 @@ import (
 //
 // The rule set passed to each plugin can be configured with compliance specific settings based on the InputContext.
 func GeneratePolicy(ctx context.Context, pluginSet map[plugin.ID]policy.Generator, inputContext *InputContext) error {
-	log := logging.GetLogger("aggregator")
-
+	log := logging.GetLogger("generator")
 	for providerId, policyPlugin := range pluginSet {
 		componentTitle, err := inputContext.ProviderTitle(providerId)
 		if err != nil {
