@@ -11,7 +11,7 @@ message PolicyRequest {
   repeated protocols.Rule rule = 1;
 }
 
-// genereate PVP policy response
+// generate PVP policy response
 message GenerateResponse {}
 
 // get PVP results response
@@ -25,9 +25,15 @@ message ConfigureRequest {
 
 message ConfigureResponse {}
 
-// get policy results from PVP
-service PolicyEngine {
+// Generate policy artifacts
+service Generator {
   rpc Generate(PolicyRequest) returns (GenerateResponse);
+  rpc Configure(ConfigureRequest) returns (ConfigureResponse);
+}
+
+// Aggregate and normalized policy results
+service Aggregator {
   rpc GetResults(PolicyRequest) returns (ResultsResponse);
   rpc Configure(ConfigureRequest) returns (ConfigureResponse);
 }
+

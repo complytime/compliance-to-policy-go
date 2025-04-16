@@ -3,7 +3,7 @@
     "id": "testplugin2",
     "description": "My test plugin",
     "version": "0.0.0",
-    "types": ["pvp"]
+    "types": ["generation", "aggregation"]
   },
   "executablePath": "testplugin2",
   "sha256": "27b84ecfa2ebc2d420cadf57e35a1fcd4a27781a952d5594dcbe11ccfbb4b035"

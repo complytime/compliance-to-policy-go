@@ -26,7 +26,8 @@ import (
 func main() {
 	kyvernoPlugin := server.NewPlugin()
 	plugins := map[string]hplugin.Plugin{
-		plugin.PVPPluginName: &plugin.PVPPlugin{Impl: kyvernoPlugin},
+		plugin.AggregationPluginName: &plugin.AggregatorPlugin{Impl: kyvernoPlugin},
+		plugin.GenerationPluginName:  &plugin.GeneratorPlugin{Impl: kyvernoPlugin},
 	}
 	config := plugin.ServeConfig{
 		PluginSet: plugins,

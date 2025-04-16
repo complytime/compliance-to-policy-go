@@ -3,7 +3,7 @@
  SPDX-License-Identifier: Apache-2.0
 */
 
-package config
+package framework
 
 import (
 	"errors"
@@ -12,16 +12,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	oscalTypes "github.com/defenseunicorns/go-oscal/src/types/oscal-1-1-2"
 	"github.com/hashicorp/go-hclog"
+
+	"github.com/oscal-compass/compliance-to-policy-go/v2/plugin"
 )
 
-const (
-	// Only validation components are plugins
-	pluginComponentType = "validation"
-	// DefaultPluginPath default location c2p will look for plugins
-	DefaultPluginPath = "c2p-plugins"
-)
+// DefaultPluginPath default location c2p will look for plugins
+const DefaultPluginPath = "c2p-plugins"
 
 // C2PConfig represents configuration options for the C2P framework.PluginManager.
 type C2PConfig struct {
@@ -30,8 +27,7 @@ type C2PConfig struct {
 	PluginDir string
 	// Logger is the logging implementation used in the PluginManager and
 	// plugin clients.
-	Logger               hclog.Logger
-	ComponentDefinitions []oscalTypes.ComponentDefinition
+	Logger hclog.Logger
 }
 
 var defaultLogger = hclog.New(&hclog.LoggerOptions{
@@ -43,9 +39,8 @@ var defaultLogger = hclog.New(&hclog.LoggerOptions{
 // DefaultConfig returns the default configuration.
 func DefaultConfig() *C2PConfig {
 	return &C2PConfig{
-		PluginDir:            DefaultPluginPath,
-		Logger:               defaultLogger,
-		ComponentDefinitions: make([]oscalTypes.ComponentDefinition, 0),
+		PluginDir: DefaultPluginPath,
+		Logger:    defaultLogger,
 	}
 }
 
@@ -63,9 +58,6 @@ func (c *C2PConfig) Validate() error {
 		}
 		return err
 	}
-	if len(c.ComponentDefinitions) == 0 {
-		return fmt.Errorf("component definitions not set")
-	}
 	if c.Logger == nil {
 		c.Logger = defaultLogger
 	}
@@ -74,4 +66,4 @@ func (c *C2PConfig) Validate() error {
 
 // PluginConfig is a function signature that returns configuration
 // option key, value pairs for a given plugin id.
-type PluginConfig func(string) map[string]string
+type PluginConfig func(id plugin.ID) map[string]string

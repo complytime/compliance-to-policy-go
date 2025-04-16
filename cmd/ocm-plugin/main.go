@@ -26,7 +26,8 @@ import (
 func main() {
 	ocmPlugin := server.NewPlugin()
 	plugins := map[string]hplugin.Plugin{
-		plugin.PVPPluginName: &plugin.PVPPlugin{Impl: ocmPlugin},
+		plugin.AggregationPluginName: &plugin.AggregatorPlugin{Impl: ocmPlugin},
+		plugin.GenerationPluginName:  &plugin.GeneratorPlugin{Impl: ocmPlugin},
 	}
 	config := plugin.ServeConfig{
 		PluginSet: plugins,

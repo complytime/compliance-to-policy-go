@@ -13,13 +13,16 @@ import (
 )
 
 // Client must return an implementation of the corresponding interface that communicates over an RPC client.
-var _ policy.Provider = (*pvpClient)(nil)
+var (
+	_ policy.Aggregator = (*aggregatorClient)(nil)
+	_ policy.Generator  = (*generatorClient)(nil)
+)
 
-type pvpClient struct {
-	client proto.PolicyEngineClient
+type aggregatorClient struct {
+	client proto.AggregatorClient
 }
 
-func (pvp *pvpClient) Configure(configuration map[string]string) error {
+func (pvp *aggregatorClient) Configure(configuration map[string]string) error {
 	request := proto.ConfigureRequest{
 		Settings: configuration,
 	}
@@ -30,16 +33,7 @@ func (pvp *pvpClient) Configure(configuration map[string]string) error {
 	return nil
 }
 
-func (pvp *pvpClient) Generate(p policy.Policy) error {
-	request := PolicyToProto(p)
-	_, err := pvp.client.Generate(context.Background(), request)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (pvp *pvpClient) GetResults(p policy.Policy) (policy.PVPResult, error) {
+func (pvp *aggregatorClient) GetResults(p policy.Policy) (policy.PVPResult, error) {
 	request := PolicyToProto(p)
 	resp, err := pvp.client.GetResults(context.Background(), request)
 	if err != nil {
@@ -47,4 +41,28 @@ func (pvp *pvpClient) GetResults(p policy.Policy) (policy.PVPResult, error) {
 	}
 	pvpResult := NewResultFromProto(resp.Result)
 	return pvpResult, nil
+}
+
+type generatorClient struct {
+	client proto.GeneratorClient
+}
+
+func (pvp *generatorClient) Configure(configuration map[string]string) error {
+	request := proto.ConfigureRequest{
+		Settings: configuration,
+	}
+	_, err := pvp.client.Configure(context.Background(), &request)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (pvp *generatorClient) Generate(p policy.Policy) error {
+	request := PolicyToProto(p)
+	_, err := pvp.client.Generate(context.Background(), request)
+	if err != nil {
+		return err
+	}
+	return nil
 }
