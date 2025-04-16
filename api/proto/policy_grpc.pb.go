@@ -11,7 +11,6 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -30,8 +29,8 @@ const (
 //
 // Generate policy artifacts
 type GeneratorClient interface {
-	Generate(ctx context.Context, in *PolicyRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	Configure(ctx context.Context, in *ConfigureRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	Generate(ctx context.Context, in *PolicyRequest, opts ...grpc.CallOption) (*GenerateResponse, error)
+	Configure(ctx context.Context, in *ConfigureRequest, opts ...grpc.CallOption) (*ConfigureResponse, error)
 }
 
 type generatorClient struct {
@@ -42,9 +41,9 @@ func NewGeneratorClient(cc grpc.ClientConnInterface) GeneratorClient {
 	return &generatorClient{cc}
 }
 
-func (c *generatorClient) Generate(ctx context.Context, in *PolicyRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *generatorClient) Generate(ctx context.Context, in *PolicyRequest, opts ...grpc.CallOption) (*GenerateResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(emptypb.Empty)
+	out := new(GenerateResponse)
 	err := c.cc.Invoke(ctx, Generator_Generate_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -52,9 +51,9 @@ func (c *generatorClient) Generate(ctx context.Context, in *PolicyRequest, opts 
 	return out, nil
 }
 
-func (c *generatorClient) Configure(ctx context.Context, in *ConfigureRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *generatorClient) Configure(ctx context.Context, in *ConfigureRequest, opts ...grpc.CallOption) (*ConfigureResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(emptypb.Empty)
+	out := new(ConfigureResponse)
 	err := c.cc.Invoke(ctx, Generator_Configure_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -68,8 +67,8 @@ func (c *generatorClient) Configure(ctx context.Context, in *ConfigureRequest, o
 //
 // Generate policy artifacts
 type GeneratorServer interface {
-	Generate(context.Context, *PolicyRequest) (*emptypb.Empty, error)
-	Configure(context.Context, *ConfigureRequest) (*emptypb.Empty, error)
+	Generate(context.Context, *PolicyRequest) (*GenerateResponse, error)
+	Configure(context.Context, *ConfigureRequest) (*ConfigureResponse, error)
 	mustEmbedUnimplementedGeneratorServer()
 }
 
@@ -80,10 +79,10 @@ type GeneratorServer interface {
 // pointer dereference when methods are called.
 type UnimplementedGeneratorServer struct{}
 
-func (UnimplementedGeneratorServer) Generate(context.Context, *PolicyRequest) (*emptypb.Empty, error) {
+func (UnimplementedGeneratorServer) Generate(context.Context, *PolicyRequest) (*GenerateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Generate not implemented")
 }
-func (UnimplementedGeneratorServer) Configure(context.Context, *ConfigureRequest) (*emptypb.Empty, error) {
+func (UnimplementedGeneratorServer) Configure(context.Context, *ConfigureRequest) (*ConfigureResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Configure not implemented")
 }
 func (UnimplementedGeneratorServer) mustEmbedUnimplementedGeneratorServer() {}
@@ -175,7 +174,7 @@ const (
 // Aggregate and normalized policy results
 type AggregatorClient interface {
 	GetResults(ctx context.Context, in *PolicyRequest, opts ...grpc.CallOption) (*ResultsResponse, error)
-	Configure(ctx context.Context, in *ConfigureRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	Configure(ctx context.Context, in *ConfigureRequest, opts ...grpc.CallOption) (*ConfigureResponse, error)
 }
 
 type aggregatorClient struct {
@@ -196,9 +195,9 @@ func (c *aggregatorClient) GetResults(ctx context.Context, in *PolicyRequest, op
 	return out, nil
 }
 
-func (c *aggregatorClient) Configure(ctx context.Context, in *ConfigureRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *aggregatorClient) Configure(ctx context.Context, in *ConfigureRequest, opts ...grpc.CallOption) (*ConfigureResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(emptypb.Empty)
+	out := new(ConfigureResponse)
 	err := c.cc.Invoke(ctx, Aggregator_Configure_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -213,7 +212,7 @@ func (c *aggregatorClient) Configure(ctx context.Context, in *ConfigureRequest, 
 // Aggregate and normalized policy results
 type AggregatorServer interface {
 	GetResults(context.Context, *PolicyRequest) (*ResultsResponse, error)
-	Configure(context.Context, *ConfigureRequest) (*emptypb.Empty, error)
+	Configure(context.Context, *ConfigureRequest) (*ConfigureResponse, error)
 	mustEmbedUnimplementedAggregatorServer()
 }
 
@@ -227,7 +226,7 @@ type UnimplementedAggregatorServer struct{}
 func (UnimplementedAggregatorServer) GetResults(context.Context, *PolicyRequest) (*ResultsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetResults not implemented")
 }
-func (UnimplementedAggregatorServer) Configure(context.Context, *ConfigureRequest) (*emptypb.Empty, error) {
+func (UnimplementedAggregatorServer) Configure(context.Context, *ConfigureRequest) (*ConfigureResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Configure not implemented")
 }
 func (UnimplementedAggregatorServer) mustEmbedUnimplementedAggregatorServer() {}

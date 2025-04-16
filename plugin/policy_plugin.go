@@ -8,10 +8,8 @@ package plugin
 import (
 	"context"
 
-	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/emptypb"
-
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/oscal-compass/compliance-to-policy-go/v2/api/proto"
 	"github.com/oscal-compass/compliance-to-policy-go/v2/policy"
@@ -34,12 +32,13 @@ func FromAggregator(pe policy.Aggregator) proto.AggregatorServer {
 	}
 }
 
-func (p *aggregatorService) Configure(ctx context.Context, request *proto.ConfigureRequest) (*emptypb.Empty, error) {
+func (p *aggregatorService) Configure(ctx context.Context, request *proto.ConfigureRequest) (*proto.ConfigureResponse, error) {
 	if err := p.Impl.Configure(request.Settings); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return nil, nil
+	// policy.Provider.Configure currently only returns an error, so using an empty proto.ConfigureResponse
+	return &proto.ConfigureResponse{}, nil
 }
 
 func (p *aggregatorService) GetResults(ctx context.Context, request *proto.PolicyRequest) (*proto.ResultsResponse, error) {
@@ -61,16 +60,18 @@ func FromGenerator(pe policy.Generator) proto.GeneratorServer {
 	}
 }
 
-func (p *generatorService) Configure(ctx context.Context, request *proto.ConfigureRequest) (*emptypb.Empty, error) {
+func (p *generatorService) Configure(ctx context.Context, request *proto.ConfigureRequest) (*proto.ConfigureResponse, error) {
 	if err := p.Impl.Configure(request.Settings); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	return nil, nil
+	// policy.Provider.Configure currently only returns an error, so using an empty proto.ConfigureResponse
+	return &proto.ConfigureResponse{}, nil
 }
 
-func (p *generatorService) Generate(ctx context.Context, request *proto.PolicyRequest) (*emptypb.Empty, error) {
+func (p *generatorService) Generate(ctx context.Context, request *proto.PolicyRequest) (*proto.GenerateResponse, error) {
 	if err := p.Impl.Generate(NewPolicyFromProto(request)); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	return nil, nil
+	// policy.Provider.Generate currently only returns an error, so using an empty proto.GenerateResponse
+	return &proto.GenerateResponse{}, nil
 }
