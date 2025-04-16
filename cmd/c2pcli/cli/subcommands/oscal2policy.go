@@ -66,12 +66,17 @@ func runOSCAL2Policy(ctx context.Context, option *Options) error {
 		return err
 	}
 
-	settings, err := Settings(option)
+	compDef, err := loadCompDef(option.Definition)
 	if err != nil {
 		return err
 	}
 
-	inputContext, err := Context(option)
+	settings, err := Settings(option, compDef)
+	if err != nil {
+		return err
+	}
+
+	inputContext, err := Context(compDef)
 	if err != nil {
 		return err
 	}

@@ -31,14 +31,9 @@ func Config(option *Options) (*framework.C2PConfig, error) {
 	return c2pConfig, nil
 }
 
-func Context(option *Options) (*action.InputContext, error) {
-	compDef, err := loadCompDef(option.Definition)
-	if err != nil {
-		return nil, err
-	}
-
+func Context(compDef oscalTypes.ComponentDefinition) (*action.InputContext, error) {
 	if compDef.Components == nil {
-		return nil, errors.New("bug: component definition components cannot be nil")
+		return nil, errors.New("component definition components cannot be nil")
 	}
 
 	var allComponents []components.Component
@@ -67,12 +62,11 @@ func loadCompDef(path string) (oscalTypes.ComponentDefinition, error) {
 }
 
 // Settings returns extracted compliance settings from a given component definition implementation using the C2PConfig.
-func Settings(option *Options) (*settings.ImplementationSettings, error) {
-	var implementation []oscalTypes.ControlImplementationSet
-	compDef, err := loadCompDef(option.Definition)
-	if err != nil {
-		return nil, err
+func Settings(option *Options, compDef oscalTypes.ComponentDefinition) (*settings.ImplementationSettings, error) {
+	if compDef.Components == nil {
+		return nil, errors.New("component definition components cannot be nil")
 	}
+	var implementation []oscalTypes.ControlImplementationSet
 	for _, cp := range *compDef.Components {
 		if cp.ControlImplementations != nil {
 			implementation = append(implementation, *cp.ControlImplementations...)
